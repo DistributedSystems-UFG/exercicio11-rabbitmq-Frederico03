@@ -41,3 +41,58 @@ pip install rabbitpy
 ```
 
 *Note:* Make sure the IP address of the RabbitMQ server is correctly set in const.py
+
+---
+
+# Solucao da tarefa (minimalista, sem apagar arquivos antigos)
+
+Esta implementacao da tarefa esta no arquivo `app_task.py`.
+
+## O que foi implementado
+
+- Varias filas distintas: `temperature.raw.a`, `temperature.raw.b`, `temperature.processed`, `temperature.alerts`
+- Mais de um produtor: `producer-a` e `producer-b`
+- Varios consumidores especificos:
+	- `processor-a` consome `temperature.raw.a`
+	- `processor-b` consome `temperature.raw.b`
+	- `storage` consome `temperature.processed` e salva no SQLite
+	- `alerts` consome `temperature.alerts` e simula notificacao
+- Mensagens de aplicacao (temperatura), nao mensagens genericas
+
+## Execucao minima
+
+1) Subir RabbitMQ:
+
+```bash
+docker compose up -d
+```
+
+2) Instalar dependencia:
+
+```bash
+pip install -r requirements.txt
+```
+
+3) Rodar em terminais separados:
+
+```bash
+python app_task.py storage
+python app_task.py alerts
+python app_task.py processor-a
+python app_task.py processor-b
+python app_task.py producer-a
+python app_task.py producer-b
+```
+
+4) Consultar historico salvo:
+
+```bash
+python app_task.py history --limit 10
+```
+
+## Comparacao RabbitMQ/AMQP x Kafka (aplicacao implementada)
+
+1. RabbitMQ/AMQP foi mais direto para separar responsabilidades em filas e tratar cada tipo de tarefa com consumidores especificos.
+2. Kafka e mais forte para pipeline de eventos com historico longo e reprocessamento por offset.
+3. Para esta solucao minimalista de monitoramento e alertas, RabbitMQ ficou mais simples de desenvolver e operar.
+4. Para cenarios com volume muito alto e foco em streaming/analytics, Kafka tende a escalar melhor.
